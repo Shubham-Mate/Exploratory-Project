@@ -1,5 +1,7 @@
 from sklearn.neighbors import KernelDensity
 import numpy as np
+from scipy.stats import gaussian_kde
+import matplotlib.pyplot as plt
 
 def generate_random_covariance_matrix(n: int, low: int, high: int):
     '''
@@ -41,3 +43,16 @@ def kl_divergence(samples, target_distribution):
     kl_div /= N
     
     return kl_div
+
+def plot_sampled_distribution(target, samples, mean, std_dev, title='PDF Estimations'):
+    kde = gaussian_kde(samples)
+    x = np.linspace(mean-1.5*std_dev, mean+1.5*std_dev, 100)
+
+    plt.plot(x, target.pdf(x), label='Original Distribution')
+    plt.plot(x, kde(x), linestyle='--', label='Approximation by Sampling')
+
+    plt.title(title)
+    plt.xlabel('x')
+    plt.ylabel('PDF')
+    plt.legend()
+    plt.show()
