@@ -21,38 +21,34 @@ def kl_divergence(samples, target_distribution):
     Returns:
     - KL divergence estimate.
     """
-    N = samples.shape[0]
-    d = samples.shape[1]
     
-
     # Fit KDE to the samples to estimate Q
-    kde = KernelDensity(kernel='gaussian', bandwidth=1).fit(samples)
+    kde = gaussian_kde(samples, bw_method='scott')
     
-    # Compute the KL divergence using Monte Carlo approximation
-    kl_div = 0.0
+    # Log probabilities for the true distribution P
+    p_vals = target_distribution.pdf(samples)
     
-    for sample in samples:
-        # Log probabilities for the true distribution P
-        log_p_theta = target_distribution.logpdf(sample)
-        
-        # Log probabilities for the empirical distribution Q (estimated via KDE)
-        log_q_theta = kde.score_samples(sample.reshape(1, -1))
-        
-        kl_div += (log_p_theta - log_q_theta)
+    # Log probabilities for the empirical distribution Q (estimated via KDE)
+    q_vals = kde(samples)
+    q_vals = np.maximum(q_vals, 1e-10)
     
-    kl_div /= N
+    # Avoid division by zero in log computation
+    log_term = (1/2)*np.square(np.log(p_vals / q_vals))
     
-    return kl_div
+    # Monte Carlo approximation of KL divergence
+    kl_divergence = np.mean(log_term)
 
-def plot_sampled_distribution(target, samples, mean, std_dev, title='PDF Estimations'):
+    return kl_divergence
+
+def plot_sampled_distribution(ax, target, samples, mean, std_dev, title='PDF Estimations'):
     kde = gaussian_kde(samples)
     x = np.linspace(mean-1.5*std_dev, mean+1.5*std_dev, 100)
 
-    plt.plot(x, target.pdf(x), label='Original Distribution')
-    plt.plot(x, kde(x), linestyle='--', label='Approximation by Sampling')
+    ax.plot(x, target.pdf(x), label='Original Distribution')
+    ax.plot(x, kde(x), linestyle='--', label='Approximation by Sampling')
 
-    plt.title(title)
-    plt.xlabel('x')
-    plt.ylabel('PDF')
-    plt.legend()
-    plt.show()
+    ax.set_title(title)
+    ax.set_xlabel('x')
+    ax.set_ylabel('PDF')
+    ax.legend()
+    
